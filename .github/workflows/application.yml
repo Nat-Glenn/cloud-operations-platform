@@ -89,7 +89,7 @@ jobs:
             echo 'has_changes=true' >> "$GITHUB_OUTPUT"
           fi
 
-  validate-and-build-services:
+  build-services:
     name: Build ${{ matrix.service }}
     needs: detect-service-changes
     if: needs.detect-service-changes.outputs.has_changes == 'true'
@@ -139,6 +139,92 @@ jobs:
           push: ${{ github.event_name == 'push' }}
           tags: |
             ${{ env.ECR_REGISTRY }}/cloud-operations-${{ matrix.service }}:${{ github.sha }}
+
+  update-helm-values:
+    name: Update Helm image tags
+
+    needs:
+      - detect-service-changes
+      - build_services
+
+    if: |
+      github.event_name == 'push' &&
+      needs.detect-service-changes.outputs.has_changes == 'true' &&
+      needs.build_services.result == 'success'
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install YAML dependency
+        run: pip install PyYAML
+
+      - name: Update changed service image tags
+        env:
+          SERVICES_JSON: ${{ needs.detect-service-changes.outputs.services }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          python <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          import yaml
+
+          values_path = Path("helm/cloud-operations/values.yaml")
+          values = yaml.safe_load(values_path.read_text())
+
+          changed_services = json.loads(os.environ["SERVICES_JSON"])
+          image_tag = os.environ["IMAGE_TAG"]
+
+          value_keys = {
+              "scanning-service": "scanning",
+              "licensing-service": "licensing",
+              "notification-service": "notification",
+          }
+
+          for service in changed_services:
+              key = value_keys[service]
+              old_tag = values[key]["image"]["tag"]
+              values[key]["image"]["tag"] = image_tag
+
+              print(f"{service}: {old_tag} -> {image_tag}")
+
+          values_path.write_text(
+              yaml.safe_dump(
+                  values,
+                  sort_keys=False,
+                  default_flow_style=False,
+              )
+          )
+          PY
+
+      - name: Show Helm values change
+        run: git diff -- helm/cloud-operations/values.yaml
+
+      - name: Commit updated image tags
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add helm/cloud-operations/values.yaml
+
+          if git diff --cached --quiet; then
+            echo "No Helm image-tag changes to commit."
+            exit 0
+          fi
+
+          git commit -m "Update Helm image tags to ${GITHUB_SHA}"
+          git push origin HEAD:main
 
   validate-helm:
     name: Validate Helm chart
