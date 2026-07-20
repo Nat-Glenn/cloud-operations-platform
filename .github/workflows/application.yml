@@ -89,7 +89,7 @@ jobs:
             echo 'has_changes=true' >> "$GITHUB_OUTPUT"
           fi
 
-  build-services:
+  build_services:
     name: Build ${{ matrix.service }}
     needs: detect-service-changes
     if: needs.detect-service-changes.outputs.has_changes == 'true'
