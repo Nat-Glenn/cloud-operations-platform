@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: scanning-service
+  namespace: {{ .Values.global.namespace }}
+
+spec:
+  replicas: {{ .Values.scanning.replicaCount }}
+
+  selector:
+    matchLabels:
+      app: scanning-service
+
+  template:
+    metadata:
+      labels:
+        app: scanning-service
+
+    spec:
+      serviceAccountName: {{ .Values.scanning.serviceAccount.name }}
+
+      containers:
+        - name: scanning-service
+
+          image: "{{ .Values.scanning.image.repository }}:{{ .Values.scanning.image.tag }}"
+
+          imagePullPolicy: {{ .Values.scanning.image.pullPolicy }}
+
+          ports:
+            - containerPort: {{ .Values.scanning.service.targetPort }}
+
+          envFrom:
+            - configMapRef:
+                name: scanning-service-config

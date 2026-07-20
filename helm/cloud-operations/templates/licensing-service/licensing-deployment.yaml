@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: licensing-service
+  namespace: {{ .Values.global.namespace }}
+
+spec:
+  replicas: {{ .Values.licensing.replicaCount }}
+
+  selector:
+    matchLabels:
+      app: licensing-service
+
+  template:
+    metadata:
+      labels:
+        app: licensing-service
+
+    spec:
+      serviceAccountName: {{ .Values.licensing.serviceAccount.name }}
+
+      containers:
+        - name: licensing-service
+
+          image: "{{ .Values.licensing.image.repository }}:{{ .Values.licensing.image.tag }}"
+
+          imagePullPolicy: {{ .Values.licensing.image.pullPolicy }}
+
+          ports:
+            - containerPort: {{ .Values.licensing.service.targetPort }}
+
+          envFrom:
+            - configMapRef:
+                name: licensing-service-config

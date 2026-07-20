@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: licensing-service
+  namespace: {{ .Values.global.namespace }}
+
+spec:
+  type: ClusterIP
+
+  selector:
+    app: licensing-service
+
+  ports:
+    - port: {{ .Values.scanning.service.port }}
+      targetPort: {{ .Values.licensing.service.targetPort }}

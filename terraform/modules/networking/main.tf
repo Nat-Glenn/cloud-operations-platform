@@ -76,8 +76,10 @@ resource "aws_subnet" "public" {
   map_public_ip_on_launch = true
 
   tags = {
-    Name = "${var.project_name}-${var.environment}-public-${count.index + 1}"
-    Tier = "public"
+    Name                     = "${var.project_name}-${var.environment}-public-${count.index + 1}"
+    Tier                     = "public"
+    "kubernetes.io/role/elb" = "1"
+
   }
 }
 
@@ -90,8 +92,10 @@ resource "aws_subnet" "private" {
   map_public_ip_on_launch = false
 
   tags = {
-    Name = "${var.project_name}-${var.environment}-private-${count.index + 1}"
-    Tier = "private"
+    Name                              = "${var.project_name}-${var.environment}-private-${count.index + 1}"
+    Tier                              = "private"
+    "kubernetes.io/role/internal-elb" = "1"
+
   }
 }
 
@@ -189,25 +193,20 @@ resource "aws_security_group" "rds" {
   description = "Security group for PostgreSQL"
   vpc_id      = aws_vpc.main.id
 
+
   ingress {
-    description = "PostgreSQL from ECS"
+    description = "PostgreSQL from private application subnets"
 
     from_port = 5432
     to_port   = 5432
     protocol  = "tcp"
 
-    security_groups = [
-      aws_security_group.ecs.id
+    cidr_blocks = [
+      "10.10.11.0/24",
+      "10.10.12.0/24",
     ]
   }
 
-  egress {
-    from_port = 0
-    to_port   = 0
-    protocol  = "-1"
-
-    cidr_blocks = ["0.0.0.0/0"]
-  }
 
   tags = {
     Name = "${var.project_name}-${var.environment}-rds-sg"

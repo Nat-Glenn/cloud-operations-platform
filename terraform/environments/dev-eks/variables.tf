@@ -1,11 +1,11 @@
 variable "aws_region" {
-  description = "AWS region where resources will be created"
+  description = "AWS region where resources are created"
   type        = string
   default     = "ca-central-1"
 }
 
 variable "environment" {
-  description = "Deployment environment name"
+  description = "Environment name"
   type        = string
-  default     = "dev"
+  default     = "dev-eks"
 }

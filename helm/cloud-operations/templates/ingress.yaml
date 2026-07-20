@@ -1,0 +1,41 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+
+metadata:
+  name: cloud-operations-ingress
+  namespace: {{ .Values.global.namespace }}
+
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+
+spec:
+  ingressClassName: alb
+
+  rules:
+    - http:
+        paths:
+
+          - path: /scan
+            pathType: Prefix
+            backend:
+              service:
+                name: scanning-service
+                port:
+                  number: 80
+
+          - path: /licenses
+            pathType: Prefix
+            backend:
+              service:
+                name: licensing-service
+                port:
+                  number: 80
+
+          - path: /notifications
+            pathType: Prefix
+            backend:
+              service:
+                name: notification-service
+                port:
+                  number: 80

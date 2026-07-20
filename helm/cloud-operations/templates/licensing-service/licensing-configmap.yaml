@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: licensing-service-config
+  namespace: {{ .Values.global.namespace }}
+
+data:
+  APP_NAME: {{ .Values.licensing.config.APP_NAME | quote }}
+  PORT: {{ .Values.licensing.config.PORT | quote }}
+  ENVIRONMENT: {{ .Values.licensing.config.ENVIRONMENT | quote }}

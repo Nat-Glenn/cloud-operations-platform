@@ -1,0 +1,62 @@
+global:
+  namespace: staging
+
+scanning:
+  replicaCount: 2
+
+  image:
+    repository: 386566550877.dkr.ecr.ca-central-1.amazonaws.com/cloud-operations-scanning-service
+    tag: v1.0.1
+    pullPolicy: IfNotPresent
+
+  service:
+    port: 80
+    targetPort: 3000
+
+  serviceAccount:
+    name: scanning-service-account
+
+  config:
+    APP_NAME: scanning-service
+    PORT: "3000"
+    ENVIRONMENT: staging
+
+licensing:
+  replicaCount: 2
+
+  image:
+    repository: 386566550877.dkr.ecr.ca-central-1.amazonaws.com/cloud-operations-licensing-service
+    tag: v1.0.1
+    pullPolicy: IfNotPresent
+
+  service:
+    port: 80
+    targetPort: 3000
+
+  serviceAccount:
+    name: licensing-service-account
+
+  config:
+    APP_NAME: licensing-service
+    PORT: "3000"
+    ENVIRONMENT: staging
+
+notification:
+  replicaCount: 1
+
+  image:
+    repository: 386566550877.dkr.ecr.ca-central-1.amazonaws.com/cloud-operations-notification-service
+    tag: v1.0.1
+    pullPolicy: IfNotPresent
+
+  service:
+    port: 80
+    targetPort: 3000
+
+  serviceAccount:
+    name: notification-service-account
+
+  config:
+    APP_NAME: notification-service
+    PORT: "3000"
+    ENVIRONMENT: staging

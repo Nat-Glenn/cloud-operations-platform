@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: notification-service
+  namespace: {{ .Values.global.namespace }}
+
+spec:
+  replicas: {{ .Values.notification.replicaCount }}
+
+  selector:
+    matchLabels:
+      app: notification-service
+
+  template:
+    metadata:
+      labels:
+        app: notification-service
+
+    spec:
+      serviceAccountName: {{ .Values.notification.serviceAccount.name }}
+
+      containers:
+        - name: notification-service
+
+          image: "{{ .Values.notification.image.repository }}:{{ .Values.notification.image.tag }}"
+
+          imagePullPolicy: {{ .Values.notification.image.pullPolicy }}
+
+          ports:
+            - containerPort: {{ .Values.notification.service.targetPort }}
+
+          envFrom:
+            - configMapRef:
+                name: notification-service-config
