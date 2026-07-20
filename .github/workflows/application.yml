@@ -24,15 +24,82 @@ env:
   ECR_REGISTRY: 386566550877.dkr.ecr.ca-central-1.amazonaws.com
 
 jobs:
-  validate-services:
+  detect-service-changes:
+    name: Detect changed services
+    runs-on: ubuntu-latest
+
+    outputs:
+      services: ${{ steps.changes.outputs.services }}
+      has_changes: ${{ steps.changes.outputs.has_changes }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed service directories
+        id: changes
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          else
+            BASE_SHA="${{ github.event.before }}"
+
+            # Handles the first push to a new branch.
+            if [[ "$BASE_SHA" =~ ^0+$ ]]; then
+              BASE_SHA="$(git rev-list --max-parents=0 HEAD)"
+            fi
+          fi
+
+          HEAD_SHA="${{ github.sha }}"
+
+          echo "Comparing $BASE_SHA to $HEAD_SHA"
+
+          CHANGED_FILES="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
+          echo "$CHANGED_FILES"
+
+          SERVICES=()
+
+          for SERVICE in \
+            scanning-service \
+            licensing-service \
+            notification-service
+          do
+            if echo "$CHANGED_FILES" | grep -q "^services/${SERVICE}/"; then
+              SERVICES+=("$SERVICE")
+            fi
+          done
+
+          if [[ ${#SERVICES[@]} -eq 0 ]]; then
+            echo 'services=[]' >> "$GITHUB_OUTPUT"
+            echo 'has_changes=false' >> "$GITHUB_OUTPUT"
+          else
+            SERVICES_JSON="$(
+              printf '%s\n' "${SERVICES[@]}" |
+              jq -R . |
+              jq -sc .
+            )"
+
+            echo "Changed services: $SERVICES_JSON"
+            echo "services=$SERVICES_JSON" >> "$GITHUB_OUTPUT"
+            echo 'has_changes=true' >> "$GITHUB_OUTPUT"
+          fi
+
+  validate-and-build-services:
+    name: Build ${{ matrix.service }}
+    needs: detect-service-changes
+    if: needs.detect-service-changes.outputs.has_changes == 'true'
+
     runs-on: ubuntu-latest
 
     strategy:
+      fail-fast: false
       matrix:
-        service:
-          - scanning-service
-          - licensing-service
-          - notification-service
+        service: ${{ fromJson(needs.detect-service-changes.outputs.services) }}
 
     steps:
       - name: Checkout repository
@@ -64,7 +131,7 @@ jobs:
         if: github.event_name == 'push'
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build and push amd64 image
+      - name: Build and optionally push amd64 image
         uses: docker/build-push-action@v6
         with:
           context: services/${{ matrix.service }}
@@ -74,6 +141,7 @@ jobs:
             ${{ env.ECR_REGISTRY }}/cloud-operations-${{ matrix.service }}:${{ github.sha }}
 
   validate-helm:
+    name: Validate Helm chart
     runs-on: ubuntu-latest
 
     steps:
