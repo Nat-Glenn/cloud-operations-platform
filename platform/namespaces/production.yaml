@@ -1,8 +1,12 @@
+# Production namespace placeholder for future promotion of cloud-operations.
+# Applied manually as a cluster bootstrap prerequisite when production is enabled.
+# Input: none. Output: Namespace/production. Used by: platform bootstrap.
+
 apiVersion: v1
 kind: Namespace
 
 metadata:
-  name: staging
+  name: production
 
   labels:
-    environment: staging
+    environment: production

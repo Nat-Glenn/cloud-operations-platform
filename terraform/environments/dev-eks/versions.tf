@@ -12,4 +12,12 @@ terraform {
       version = "~> 4.0"
     }
   }
+
+  backend "s3" {
+    bucket       = "cloud-operations-platform-386566550877-tfstate"
+    key          = "dev-eks/terraform.tfstate"
+    region       = "ca-central-1"
+    encrypt      = true
+    use_lockfile = true
+  }
 }

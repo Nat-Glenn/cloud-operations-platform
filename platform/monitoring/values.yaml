@@ -1,0 +1,119 @@
+# Lightweight kube-prometheus-stack values for a 2x t3.small EKS cluster.
+# Workflow: install/upgrade prometheus-community/kube-prometheus-stack into
+# the monitoring namespace after freeing pod slots (see platform/monitoring/README.md).
+# Inputs: Helm chart values. Outputs: Prometheus, Grafana, kube-state-metrics, node-exporter,
+# and the Prometheus Operator (Alertmanager disabled for pod-capacity).
+# Used by: platform monitoring bootstrap (not part of helm/cloud-operations).
+#
+# Constraint: each t3.small allows only 11 pods. Defaults from the upstream
+# chart are too heavy; keep components but shrink retention and requests.
+
+fullnameOverride: kube-prometheus-stack
+
+# Fewer default rule groups / monitors = less scrape + config load on tiny nodes.
+defaultRules:
+  create: true
+  rules:
+    etcd: false
+    kubeScheduler: false
+    kubeControllerManager: false
+
+# Disabled on 2x t3.small (11 pods/node): after Argo slim + ALB replica=1 there
+# is only room for Prometheus + Grafana + kube-state-metrics + node-exporter.
+alertmanager:
+  enabled: false
+
+grafana:
+  enabled: true
+  replicas: 1
+  adminPassword: prom-operator
+  resources:
+    requests:
+      cpu: 20m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+  persistence:
+    enabled: false
+  initChownData:
+    enabled: false
+
+kubeApiServer:
+  enabled: true
+
+kubelet:
+  enabled: true
+
+kubeControllerManager:
+  enabled: false
+
+coreDns:
+  enabled: true
+
+kubeEtcd:
+  enabled: false
+
+kubeScheduler:
+  enabled: false
+
+kubeProxy:
+  enabled: true
+
+kubeStateMetrics:
+  enabled: true
+
+kube-state-metrics:
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+
+nodeExporter:
+  enabled: true
+
+prometheus-node-exporter:
+  resources:
+    requests:
+      cpu: 10m
+      memory: 16Mi
+    limits:
+      cpu: 50m
+      memory: 64Mi
+
+prometheusOperator:
+  enabled: true
+  resources:
+    requests:
+      cpu: 20m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+  # Admission jobs consume ephemeral pod slots during install on tiny nodes.
+  admissionWebhooks:
+    enabled: false
+    patch:
+      enabled: false
+  tls:
+    enabled: false
+
+prometheus:
+  enabled: true
+  prometheusSpec:
+    replicas: 1
+    retention: 6h
+    scrapeInterval: 60s
+    evaluationInterval: 60s
+    resources:
+      requests:
+        cpu: 50m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 768Mi
+    # emptyDir (no PVC) avoids EBS provisioning on this lab cluster; data is ephemeral.
+    storageSpec: {}

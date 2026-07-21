@@ -1,3 +1,13 @@
+# Terraform CI workflow.
+# Authenticates to AWS via GitHub OIDC, checks formatting, initializes the S3
+# backend, validates configuration, and runs terraform plan only (never apply).
+# Inputs: terraform/ tree, especially terraform/environments/dev-eks.
+# Outputs: fmt/validate/plan results in the Actions log.
+# Used by: GitHub Actions on PRs and pushes to main that touch terraform/ or this file.
+#
+# Note: the terraform-ci IAM trust currently allows only refs/heads/main.
+# Pull-request OIDC will fail until that trust also allows the pull_request subject.
+
 name: Terraform CI
 
 on:
@@ -15,9 +25,16 @@ on:
 
 permissions:
   contents: read
+  id-token: write
+
+env:
+  AWS_REGION: ca-central-1
+  TF_IN_AUTOMATION: "true"
+  TERRAFORM_CI_ROLE: arn:aws:iam::386566550877:role/cloud-ops-dev-terraform-ci
 
 jobs:
   terraform-checks:
+    name: Terraform fmt, validate, and plan
     runs-on: ubuntu-latest
 
     defaults:
@@ -27,6 +44,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.TERRAFORM_CI_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v3
@@ -38,13 +61,11 @@ jobs:
         run: terraform fmt -check -recursive
 
       - name: Terraform init
-        run: terraform init -backend=false
+        run: terraform init -input=false
 
       - name: Terraform validate
         run: terraform validate
 
+      # Plan only — never apply from CI.
       - name: Terraform plan
-        run: |
-          terraform plan \
-            -input=false \
-            -lock=false
+        run: terraform plan -input=false -no-color

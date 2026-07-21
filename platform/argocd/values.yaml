@@ -1,0 +1,28 @@
+# Helm values for the upstream argo-cd chart (install only).
+# Workflow: bootstrap Argo CD into the argocd namespace; applications live under
+# platform/argocd/applications/ and are applied separately after install.
+# Inputs: consumed by `helm upgrade --install` (see README.md).
+# Outputs: Argo CD control plane (server, repo-server, controller, redis).
+# Used by: platform/argocd bootstrap — not by helm/cloud-operations.
+#
+# Dex / ApplicationSet / Notifications are disabled to free pod slots on the
+# 2x t3.small cluster (11 pods/node). Re-enable when nodes have more capacity.
+
+server:
+  service:
+    type: ClusterIP
+
+# Local admin login via argocd-initial-admin-secret; no SSO needed for this cluster.
+dex:
+  enabled: false
+
+# Chart v10 has no applicationSet.enabled — scale to 0 to free a pod slot on t3.small.
+applicationSet:
+  replicas: 0
+
+notifications:
+  enabled: false
+
+configs:
+  params:
+    application.namespaces: argocd

@@ -41,3 +41,7 @@ output "application_ci_role_arn" {
   description = "IAM role assumed by the application GitHub Actions workflow"
   value       = aws_iam_role.application_ci.arn
 }
+
+output "terraform_ci_role_arn" {
+  value = aws_iam_role.terraform_ci.arn
+}

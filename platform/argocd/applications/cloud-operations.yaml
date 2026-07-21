@@ -1,0 +1,32 @@
+# Argo CD Application for the cloud-operations Helm chart.
+# Watches helm/cloud-operations on main and syncs into the staging namespace.
+# Inputs: Git repo Nat-Glenn/cloud-operations-platform (path helm/cloud-operations).
+# Outputs: synced Kubernetes resources in staging via Argo CD.
+# Used by: applied after Argo CD install (platform/argocd/README.md). Not part of
+# the cloud-operations application chart itself.
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cloud-operations
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/Nat-Glenn/cloud-operations-platform.git
+    path: helm/cloud-operations
+    targetRevision: main
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: staging
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

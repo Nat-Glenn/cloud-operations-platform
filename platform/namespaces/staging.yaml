@@ -1,8 +1,12 @@
+# Staging namespace for the cloud-operations Helm release (Argo CD destination).
+# Applied manually or as a cluster bootstrap prerequisite before Argo CD sync.
+# Input: none. Output: Namespace/staging. Used by: platform bootstrap / Argo CD.
+
 apiVersion: v1
 kind: Namespace
 
 metadata:
-  name: production
+  name: staging
 
   labels:
-    environment: production
+    environment: staging
