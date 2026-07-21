@@ -33,3 +33,34 @@ spec:
           envFrom:
             - configMapRef:
                 name: licensing-service-config
+
+          resources:
+            requests:
+              cpu: {{ .Values.licensing.resources.requests.cpu | quote }}
+              memory: {{ .Values.licensing.resources.requests.memory | quote }}
+            limits:
+              cpu: {{ .Values.licensing.resources.limits.cpu | quote }}
+              memory: {{ .Values.licensing.resources.limits.memory | quote }}
+
+          startupProbe:
+            httpGet:
+              path: {{ .Values.licensing.probes.startup.path }}
+              port: {{ .Values.licensing.service.targetPort }}
+            periodSeconds: {{ .Values.licensing.probes.startup.periodSeconds }}
+            failureThreshold: {{ .Values.licensing.probes.startup.failureThreshold }}
+
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.licensing.probes.readiness.path }}
+              port: {{ .Values.licensing.service.targetPort }}
+            periodSeconds: {{ .Values.licensing.probes.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.licensing.probes.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.licensing.probes.readiness.failureThreshold }}
+
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.licensing.probes.liveness.path }}
+              port: {{ .Values.licensing.service.targetPort }}
+            periodSeconds: {{ .Values.licensing.probes.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.licensing.probes.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.licensing.probes.liveness.failureThreshold }}

@@ -33,3 +33,34 @@ spec:
           envFrom:
             - configMapRef:
                 name: notification-service-config
+
+          resources:
+            requests:
+              cpu: {{ .Values.notification.resources.requests.cpu | quote }}
+              memory: {{ .Values.notification.resources.requests.memory | quote }}
+            limits:
+              cpu: {{ .Values.notification.resources.limits.cpu | quote }}
+              memory: {{ .Values.notification.resources.limits.memory | quote }}
+
+          startupProbe:
+            httpGet:
+              path: {{ .Values.notification.probes.startup.path }}
+              port: {{ .Values.notification.service.targetPort }}
+            periodSeconds: {{ .Values.notification.probes.startup.periodSeconds }}
+            failureThreshold: {{ .Values.notification.probes.startup.failureThreshold }}
+
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.notification.probes.readiness.path }}
+              port: {{ .Values.notification.service.targetPort }}
+            periodSeconds: {{ .Values.notification.probes.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.notification.probes.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.notification.probes.readiness.failureThreshold }}
+
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.notification.probes.liveness.path }}
+              port: {{ .Values.notification.service.targetPort }}
+            periodSeconds: {{ .Values.notification.probes.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.notification.probes.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.notification.probes.liveness.failureThreshold }}

@@ -33,3 +33,34 @@ spec:
           envFrom:
             - configMapRef:
                 name: scanning-service-config
+
+          resources:
+            requests:
+              cpu: {{ .Values.scanning.resources.requests.cpu | quote }}
+              memory: {{ .Values.scanning.resources.requests.memory | quote }}
+            limits:
+              cpu: {{ .Values.scanning.resources.limits.cpu | quote }}
+              memory: {{ .Values.scanning.resources.limits.memory | quote }}
+
+          startupProbe:
+            httpGet:
+              path: {{ .Values.scanning.probes.startup.path }}
+              port: {{ .Values.scanning.service.targetPort }} 
+            periodSeconds: {{ .Values.scanning.probes.startup.periodSeconds }}
+            failureThreshold: {{ .Values.scanning.probes.startup.failureThreshold }}
+
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.scanning.probes.readiness.path }}
+              port: {{ .Values.scanning.service.targetPort }}
+            periodSeconds: {{ .Values.scanning.probes.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.scanning.probes.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.scanning.probes.readiness.failureThreshold }}
+
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.scanning.probes.liveness.path }}
+              port: {{ .Values.scanning.service.targetPort }}
+            periodSeconds: {{ .Values.scanning.probes.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.scanning.probes.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.scanning.probes.liveness.failureThreshold }}
